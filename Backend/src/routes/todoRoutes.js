@@ -1,14 +1,46 @@
 const express = require("express");
 const router = express.Router();
 
-const { createTodo } = require("../controllers/todoController");
+// Authentication Middleware
+const auth = require("../middleware/auth");
 
-router.post("/todos", createTodo);
-const { getTodos } = require("../controllers/todoController");
-router.get("/todos", getTodos);
-const { updateTodo } = require("../controllers/todoController");
-router.patch("/todos/:id", updateTodo);
-const { deleteTodo } = require("../controllers/todoController");
-router.delete("/todos/:id", deleteTodo);
+// Todo Controller
+const {
+    createTodo,
+    getTodos,
+    updateTodo,
+    deleteTodo
+} = require("../controllers/todoController");
+
+
+// ==========================
+// CREATE TODO
+// ==========================
+router.post("/todos", auth, createTodo);
+
+
+// ==========================
+// GET ALL TODOS
+// ==========================
+router.get("/todos", auth, getTodos);
+
+
+// ==========================
+// UPDATE TODO
+// ==========================
+router.patch("/todos/:id", auth, updateTodo);
+
+
+// ==========================
+// PUT UPDATE (Optional)
+// ==========================
+router.put("/todos/:id", auth, updateTodo);
+
+
+// ==========================
+// DELETE TODO
+// ==========================
+router.delete("/todos/:id", auth, deleteTodo);
+
 
 module.exports = router;

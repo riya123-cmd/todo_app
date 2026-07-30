@@ -1,84 +1,114 @@
 const Todo = require("../models/Todo");
 
-async function createTodo(req, res) {
+// ==========================
+// CREATE TODO
+// ==========================
+const createTodo = async (req, res) => {
     try {
-        const data = req.body;
+        const { title, description, priority, dueDate } = req.body;
 
-        const todo = await Todo.create(data);
+        if (!title || title.trim() === "") {
+            return res.status(400).json({
+                message: "Title is required"
+            });
+        }
+
+        const todo = await Todo.create({
+            user: req.user.id,
+            title,
+            description,
+            priority: priority || "Medium",
+            dueDate: dueDate || null
+        });
 
         res.status(201).json(todo);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        });
     }
-}
+};
 
-async function getTodos(req, res) {
+// ==========================
+// GET ALL TODOS (User Specific)
+// ==========================
+const getTodos = async (req, res) => {
     try {
-        const todos = await Todo.find();
-        res.status(200).json(todos);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
+        const todos = await Todo.find({ user: req.user.id }).sort({
+            createdAt: -1
+        });
+
+        res.json(todos);
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        });
     }
-}
-async function updateTodo(req, res) {
-    try {
-        const { id } = req.params;
-        const data = req.body;
+};
 
-        const todo = await Todo.findByIdAndUpdate(
-            id,
-            data,
-            {
-                returnDocument: "after"
-            }
+// ==========================
+// UPDATE TODO
+// ==========================
+const updateTodo = async (req, res) => {
+    try {
+        const { title, description, completed, priority, dueDate } = req.body;
+
+        const updateData = {};
+        if (title !== undefined) updateData.title = title;
+        if (description !== undefined) updateData.description = description;
+        if (completed !== undefined) updateData.completed = completed;
+        if (priority !== undefined) updateData.priority = priority;
+        if (dueDate !== undefined) updateData.dueDate = dueDate;
+
+        const todo = await Todo.findOneAndUpdate(
+            { _id: req.params.id, user: req.user.id },
+            updateData,
+            { new: true }
         );
 
         if (!todo) {
             return res.status(404).json({
-                message: "Todo not found"
+                message: "Todo not found or unauthorized"
             });
         }
 
-        return res.status(200).json({
-            message: "Todo updated successfully",
-            todo
-        });
-
-    } catch (err) {
-        return res.status(500).json({
-            message: err.message
+        res.json(todo);
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
         });
     }
-}
-async function deleteTodo(req, res) {
-    try {
-        const { id } = req.params;  
-        
+};
 
-        const todo = await Todo.findByIdAndDelete(id);
+// ==========================
+// DELETE TODO
+// ==========================
+const deleteTodo = async (req, res) => {
+    try {
+        const todo = await Todo.findOneAndDelete({
+            _id: req.params.id,
+            user: req.user.id
+        });
 
         if (!todo) {
             return res.status(404).json({
-                message: "Todo not found"
+                message: "Todo not found or unauthorized"
             });
         }
 
-        return res.status(200).json({
-            message: "Todo deleted successfully",
-            todo
+        res.json({
+            message: "Todo deleted successfully"
         });
-    } catch (err) {
-        return res.status(500).json({
-            message: err.message
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
         });
     }
-}
+};
 
 module.exports = {
     createTodo,
     getTodos,
     updateTodo,
     deleteTodo
-
 };
-
